@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -6,12 +7,14 @@
     <title>用户注册</title>
     <style>
         body {
+            background-image: url('{% static 'background.jpg' %}');
+            background-size: cover;
+            background-position: center;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
             font-family: 'Arial', sans-serif;
         }
        .register-container {
@@ -54,15 +57,29 @@
        .register-btn {
             background-color: #007bff;
             color: white;
-            padding: 12px 24px;
+            padding: 12px 48px;
             border: none;
-            border-radius: 4px;
+            border-radius: 50px;
             cursor: pointer;
             font-size: 16px;
             transition: background-color 0.3s;
+            width: auto; /* 恢复按钮自动宽度 */
+            display: inline-block; /* 改为行内块级元素，方便与其他按钮并排 */
+            margin-right: 10px; /* 与退出按钮留出间距 */
         }
-       .register-btn:hover {
-            background-color: #0056b3;
+       .exit-btn {
+            background-color: #6c757d; /* 深灰色，可根据喜好调整 */
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: inline-block;
+        }
+       .exit-btn:hover {
+            background-color: #5a6268; /* 鼠标悬停颜色 */
         }
        .password-requirements {
             margin-top: 8px;
@@ -107,6 +124,7 @@
                 <label for="is_admin">注册为管理员</label>
             </div>
             <button type="submit" class="register-btn">注册</button>
+            <a href="{% url 'index' %}" class="exit-btn">退出注册</a> <!-- 添加退出注册按钮 -->
         </form>
     </div>
 </body>

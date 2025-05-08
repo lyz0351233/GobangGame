@@ -8,9 +8,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-#m@-987654321abcdefghijklmnopqrstuvwxyz'
-
-
 # LOGIN_REDIRECT_URL = '/'  # 登录成功后重定向到首页
+# 媒体文件配置
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 LOGIN_REDIRECT_URL = '/user_dashboard/'  # 添加登录成功后的重定向地址
 
 # SECURITY WARNING: don't run with debug turned on in production!

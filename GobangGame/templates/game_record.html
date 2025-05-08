@@ -1,47 +1,69 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Record</title>
+    <title>游戏记录与统计</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
             background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
         }
-        table {
+       .container {
+            width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+       .stats {
+            margin-bottom: 20px;
+        }
+       .stats p {
+            margin: 5px 0;
+        }
+       .record-table {
+            width: 100%;
             border-collapse: collapse;
-            width: 80%;
         }
-        th, td {
+       .record-table th,
+       .record-table td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        th {
-            background-color: #3498db;
-            color: white;
+       .record-table th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
-    <table>
-        <thead>
-            <tr>
-                <th>Game ID</th>
-                <th>Player 1</th>
-                <th>Player 2</th>
-                <th>Result</th>
-                <th>Timestamp</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- 这里可以使用 Django 模板语言循环显示游戏记录 -->
-        </tbody>
-    </table>
+    <div class="container">
+        <h2>游戏记录与统计</h2>
+        <div class="stats">
+            <p>总对战次数: {{ total_games }}</p>
+            <p>胜利次数: {{ win_games }}</p>
+            <p>胜率: {{ win_rate|floatformat:2 }}%</p>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>对战时间</th>
+                    <th>对手信息</th>
+                    <th>胜负结果</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.start_time }}</td>
+                    <td>{{ record.opponent_type }}</td>
+                    <td>{% if record.is_win %}胜利{% else %}失败{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </body>
-</html>    
+</html>

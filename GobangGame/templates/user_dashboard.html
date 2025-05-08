@@ -44,7 +44,15 @@
             <h2>个人信息</h2>
             <p>昵称：{{ user.username }}</p>
             <p>联系方式：{{ user.contact }}</p>
+            <h2>个人信息</h2>
+            {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="用户头像" style="width: 100px; height: 100px;">
+            {% else %}
+                <p>暂无头像</p>
+            {% endif %}
             <a href="{% url 'password_change' %}" class="btn">修改密码</a>
+            <a href="{% url 'contact_change' %}" class="btn">修改联系方式</a>
+            <a href="{% url 'image_change' %}" class="btn">修改头像</a>
         </div>
         <div class="function-buttons">
             <h2>功能按钮</h2>

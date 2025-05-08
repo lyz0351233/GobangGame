@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改联系方式</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+        }
+       .container {
+            width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+       .form-group {
+            margin-bottom: 15px;
+        }
+       .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+       .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+       .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+       .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>修改联系方式</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="contact">新联系方式:</label>
+                <input type="text" id="contact" name="contact" value="{{ request.user.contact }}">
+            </div>
+            <button type="submit" class="button">修改</button>
+        </form>
+    </div>
+</body>
+</html>
