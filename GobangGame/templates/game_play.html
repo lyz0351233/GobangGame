@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五子棋对战</title>
+    <style>
+        body {
+            background-color: #f5f5dc;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .info-panel {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #board {
+            border: 2px solid #333;
+            background-color: #deb887;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .status {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            height: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="info-panel">
+            <h1>五子棋对战</h1>
+            <div id="color-choice">
+                <h2>请选择您的棋子颜色</h2>
+                <div class="controls">
+                    <button class="btn" onclick="startGame('black')">我选黑棋</button>
+                    <button class="btn" onclick="startGame('white')">我选白棋</button>
+                </div>
+            </div>
+            <div id="game-info" style="display: none;">
+                <h2 id="game-status">人机对战 - 您是 <span id="user-color-display"></span> 棋</h2>
+                <div class="status" id="status-message"></div>
+            </div>
+        </div>
+        <canvas id="board" width="570" height="570"></canvas>
+        <div class="controls" id="game-controls" style="display: none;">
+            <button class="btn" id="restart-btn" onclick="resetGame()">重新开始</button>
+            <button class="btn" id="undo-btn" onclick="undoMove()">悔棋</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 30;
+        const boardSize = 19;
+        const offset = gridSize / 2;
+        let userColor = '';
+        let botColor = '';
+        let currentPlayer = 'black'; // 黑棋先行
+        let gameOver = false;
+        let moveHistory = [];
+        let board = [];
+
+        // 初始化棋盘数据结构
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < boardSize; i++) {
+                board[i] = [];
+                for (let j = 0; j < boardSize; j++) {
+                    board[i][j] = 0; // 0表示空，1表示黑棋，2表示白棋
+                }
+            }
+        }
+
+        // 初始化游戏
+        function initGame() {
+            initBoard();
+            drawBoard();
+            moveHistory = [];
+            gameOver = false;
+            currentPlayer = 'black'; // 黑棋先行
+            document.getElementById('status-message').textContent = `轮到${currentPlayer === 'black' ? '黑' : '白'}棋落子`;
+        }
+
+        // 开始游戏
+        function startGame(color) {
+            document.getElementById('color-choice').style.display = 'none';
+            document.getElementById('game-info').style.display = 'block';
+            document.getElementById('game-controls').style.display = 'flex';
+
+            userColor = color;
+            botColor = userColor === 'black' ? 'white' : 'black';
+
+            document.getElementById('user-color-display').textContent = userColor === 'black' ? '黑' : '白';
+
+            initGame();
+
+            // 如果用户是白棋，机器人先行
+            if (userColor === 'white') {
+                setTimeout(botMove, 500);
+            }
+        }
+
+        // 重置游戏
+        function resetGame() {
+            initGame();
+            if (userColor === 'white') {
+                setTimeout(botMove, 500);
+            }
+        }
+
+        // 悔棋
+        function undoMove() {
+            if (moveHistory.length >= 2 && !gameOver) {
+                // 撤销玩家和电脑的最后一步
+                moveHistory.pop();
+                moveHistory.pop();
+
+                // 重绘棋盘
+                initBoard();
+                drawBoard();
+
+                // 重新放置历史棋子
+                for (let move of moveHistory) {
+                    board[move.x][move.y] = move.color === 'black' ? 1 : 2;
+                    drawPiece(move.x, move.y, move.color);
+                }
+
+                document.getElementById('status-message').textContent = `轮到${currentPlayer === 'black' ? '黑' : '白'}棋落子`;
+            }
+        }
+
+        // 绘制棋盘
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制背景
+            ctx.fillStyle = '#deb887';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制网格线
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < boardSize; i++) {
+                // 横线
+                ctx.beginPath();
+                ctx.moveTo(offset, i * gridSize + offset);
+                ctx.lineTo((boardSize - 1) * gridSize + offset, i * gridSize + offset);
+                ctx.stroke();
+
+                // 竖线
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize + offset, offset);
+                ctx.lineTo(i * gridSize + offset, (boardSize - 1) * gridSize + offset);
+                ctx.stroke();
+            }
+
+            // 绘制天元和星位
+            const starPoints = [3, 9, 15];
+            for (let i of starPoints) {
+                for (let j of starPoints) {
+                    ctx.beginPath();
+                    ctx.arc(i * gridSize + offset, j * gridSize + offset, 3, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#000';
+                    ctx.fill();
+                }
+            }
+        }
+
+        // 绘制棋子
+        function drawPiece(x, y, color) {
+            const xPos = x * gridSize + offset;
+            const yPos = y * gridSize + offset;
+            const radius = gridSize * 0.4;
+
+            ctx.beginPath();
+            ctx.arc(xPos, yPos, radius, 0, 2 * Math.PI);
+
+            // 绘制棋子阴影
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            if (color === 'black') {
+                // 黑棋
+                const gradient = ctx.createRadialGradient(
+                    xPos - radius/3, yPos - radius/3, radius/10,
+                    xPos, yPos, radius
+                );
+                gradient.addColorStop(0, '#666');
+                gradient.addColorStop(1, '#000');
+                ctx.fillStyle = gradient;
+            } else {
+                // 白棋
+                const gradient = ctx.createRadialGradient(
+                    xPos - radius/3, yPos - radius/3, radius/10,
+                    xPos, yPos, radius
+                );
+                gradient.addColorStop(0, '#fff');
+                gradient.addColorStop(1, '#ddd');
+                ctx.fillStyle = gradient;
+            }
+
+            ctx.fill();
+
+            // 重置阴影
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 添加边框
+            ctx.strokeStyle = color === 'black' ? '#000' : '#888';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 标记最后一手棋
+            if (moveHistory.length > 0 && moveHistory[moveHistory.length - 1].x === x && moveHistory[moveHistory.length - 1].y === y) {
+                ctx.beginPath();
+                ctx.arc(xPos, yPos, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = color === 'black' ? '#fff' : '#000';
+                ctx.fill();
+            }
+        }
+
+        // 检查位置是否已被占据
+        function isOccupied(x, y) {
+            return board[x][y] !== 0;
+        }
+
+        // 切换玩家
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+            document.getElementById('status-message').textContent = `轮到${currentPlayer === 'black' ? '黑' : '白'}棋落子`;
+        }
+
+        // 玩家落子处理
+        canvas.addEventListener('click', function(e) {
+            if (gameOver || currentPlayer !== userColor) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.round((e.clientX - rect.left - offset) / gridSize);
+            const y = Math.round((e.clientY - rect.top - offset) / gridSize);
+
+            if (x >= 0 && x < boardSize && y >= 0 && y < boardSize && !isOccupied(x, y)) {
+                placePiece(x, y, userColor);
+
+                if (!gameOver) {
+                    switchPlayer();
+                    setTimeout(botMove, 500);
+                }
+            }
+        });
+
+        // 放置棋子并检查胜负
+        function placePiece(x, y, color) {
+            board[x][y] = color === 'black' ? 1 : 2;
+            drawPiece(x, y, color);
+            moveHistory.push({x, y, color});
+
+            if (checkWin(x, y, color)) {
+                gameOver = true;
+                document.getElementById('status-message').textContent = `${color === 'black' ? '黑' : '白'}棋胜利！`;
+                return true;
+            }
+
+            if (isBoardFull()) {
+                gameOver = true;
+                document.getElementById('status-message').textContent = "平局！";
+                return true;
+            }
+
+            return false;
+        }
+
+        // 检查棋盘是否已满
+        function isBoardFull() {
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (board[i][j] === 0) return false;
+                }
+            }
+            return true;
+        }
+
+        // 胜负判定逻辑
+        function checkWin(x, y, color) {
+            const directions = [
+                [1, 0],  // 水平
+                [0, 1],  // 垂直
+                [1, 1],  // 右下
+                [1, -1]  // 右上
+            ];
+            const colorValue = color === 'black' ? 1 : 2;
+
+            for (const [dx, dy] of directions) {
+                let count = 1;  // 当前位置已经有一个棋子
+
+                // 正向检查
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x + i * dx;
+                    const ny = y + i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize && board[nx][ny] === colorValue) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+
+                // 反向检查
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x - i * dx;
+                    const ny = y - i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize && board[nx][ny] === colorValue) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (count >= 5) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 获取可下位置评分
+        function evaluatePosition(x, y, color) {
+            if (isOccupied(x, y)) return -1;
+
+            const directions = [
+                [1, 0],  // 水平
+                [0, 1],  // 垂直
+                [1, 1],  // 右下
+                [1, -1]  // 右上
+            ];
+
+            const colorValue = color === 'black' ? 1 : 2;
+            const opponentValue = color === 'black' ? 2 : 1;
+            let score = 0;
+
+            // 临时放置棋子
+            board[x][y] = colorValue;
+
+            // 检查是否立即获胜
+            if (checkWin(x, y, color)) {
+                board[x][y] = 0;  // 恢复
+                return 10000;  // 非常高的分数表示获胜
+            }
+
+            // 检查进攻价值
+            for (const [dx, dy] of directions) {
+                let myCount = 1;
+                let blocked = 0;
+
+                // 检查正方向连子数
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x + i * dx;
+                    const ny = y + i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                        if (board[nx][ny] === colorValue) {
+                            myCount++;
+                        } else if (board[nx][ny] === opponentValue) {
+                            blocked++;
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                // 检查反方向连子数
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x - i * dx;
+                    const ny = y - i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                        if (board[nx][ny] === colorValue) {
+                            myCount++;
+                        } else if (board[nx][ny] === opponentValue) {
+                            blocked++;
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                // 计算得分
+                if (myCount >= 5) score += 100000;
+                else if (myCount === 4 && blocked < 2) score += blocked === 0 ? 10000 : 1000;
+                else if (myCount === 3 && blocked < 2) score += blocked === 0 ? 1000 : 100;
+                else if (myCount === 2 && blocked < 2) score += blocked === 0 ? 100 : 10;
+                else if (myCount === 1) score += 1;
+            }
+
+            // 恢复棋盘
+            board[x][y] = 0;
+
+            // 临时放置对手棋子，检查防守价值
+            board[x][y] = opponentValue;
+
+            // 检查是否可以阻止对手获胜
+            if (checkWin(x, y, color === 'black' ? 'white' : 'black')) {
+                score += 5000;  // 高防御价值
+            }
+
+            // 检查防守价值
+            for (const [dx, dy] of directions) {
+                let opponentCount = 1;
+                let blocked = 0;
+
+                // 检查正方向连子数
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x + i * dx;
+                    const ny = y + i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                        if (board[nx][ny] === opponentValue) {
+                            opponentCount++;
+                        } else if (board[nx][ny] === colorValue) {
+                            blocked++;
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                // 检查反方向连子数
+                for (let i = 1; i <= 4; i++) {
+                    const nx = x - i * dx;
+                    const ny = y - i * dy;
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                        if (board[nx][ny] === opponentValue) {
+                            opponentCount++;
+                        } else if (board[nx][ny] === colorValue) {
+                            blocked++;
+                            break;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        blocked++;
+                        break;
+                    }
+                }
+
+                // 计算防守得分
+                if (opponentCount >= 5) score += 90000;
+                else if (opponentCount === 4 && blocked < 2) score += blocked === 0 ? 9000 : 500;
+                else if (opponentCount === 3 && blocked < 2) score += blocked === 0 ? 500 : 50;
+                else if (opponentCount === 2 && blocked < 2) score += blocked === 0 ? 50 : 10;
+            }
+
+            // 恢复棋盘
+            board[x][y] = 0;
+
+            // 位置权重（中心位置更有价值）
+            const centerX = boardSize / 2;
+            const centerY = boardSize / 2;
+            const distanceFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            const positionValue = Math.max(0, 10 - distanceFromCenter);
+            score += positionValue;
+
+            return score;
+        }
+
+        // 机器人落子
+        function botMove() {
+            if (gameOver) return;
+
+            // 构建可下位置及其评分列表
+            let bestScore = -1;
+            let bestMoves = [];
+
+            // 只考虑棋子周围的位置以提高效率
+            const candidatePositions = [];
+
+            // 首先检查是否是第一手棋
+            if (moveHistory.length === 0) {
+                // 第一手落在天元
+                candidatePositions.push({x: 9, y: 9});
+            } else {
+                // 收集所有已有棋子周围的空位
+                for (let i = 0; i < boardSize; i++) {
+                    for (let j = 0; j < boardSize; j++) {
+                        if (board[i][j] !== 0) { // 找到一个已有棋子
+                            // 检查周围3x3范围内的空位
+                            for (let dx = -2; dx <= 2; dx++) {
+                                for (let dy = -2; dy <= 2; dy++) {
+                                    const nx = i + dx;
+                                    const ny = j + dy;
+                                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize && board[nx][ny] === 0) {
+                                        // 避免重复添加
+                                        if (!candidatePositions.some(pos => pos.x === nx && pos.y === ny)) {
+                                            candidatePositions.push({x: nx, y: ny});
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 如果没有候选位置（理论上不应该发生），考虑所有空位
+            if (candidatePositions.length === 0) {
+                for (let i = 0; i < boardSize; i++) {
+                    for (let j = 0; j < boardSize; j++) {
+                        if (board[i][j] === 0) {
+                            candidatePositions.push({x: i, y: j});
+                        }
+                    }
+                }
+            }
+
+            // 评估所有候选位置
+            for (const pos of candidatePositions) {
+                const score = evaluatePosition(pos.x, pos.y, botColor);
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMoves = [{x: pos.x, y: pos.y}];
+                } else if (score === bestScore) {
+                    bestMoves.push({x: pos.x, y: pos.y});
+                }
+            }
+
+            // 如果有多个同分最佳位置，随机选择一个
+            if (bestMoves.length > 0) {
+                const bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+                placePiece(bestMove.x, bestMove.y, botColor);
+
+                if (!gameOver) {
+                    switchPlayer();
+                }
+            }
+        }
+
+        // 初始化显示选择颜色界面
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户功能界面</title>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            font-family: Arial, sans-serif;
+        }
+       .container {
+            width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+       .user-info {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+       .function-buttons {
+            margin-top: 20px;
+        }
+       .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+       .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="user-info">
+            <h2>个人信息</h2>
+            <p>昵称：{{ user.username }}</p>
+            <p>联系方式：{{ user.contact }}</p>
+            <a href="{% url 'password_change' %}" class="btn">修改密码</a>
+        </div>
+        <div class="function-buttons">
+            <h2>功能按钮</h2>
+            <a href="{% url 'game_play' %}?mode=ai" class="btn">人机切磋</a>
+            <a href="{% url 'game_play' %}?mode=friend" class="btn">好友对战</a>
+            <a href="{% url 'game_record' %}" class="btn">游戏记录与统计</a>
+        </div>
+    </div>
+</body>
+</html>
